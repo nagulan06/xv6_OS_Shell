@@ -295,6 +295,8 @@ exit1(int status)
   wakeup1(curproc->parent);
   // update the exit_status value in the proc structure.
   curproc->exit_status = status;
+  curproc->tf->eax = status;  //trap frame updates with the status value.
+
   // Pass abandoned children to init.
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->parent == curproc){

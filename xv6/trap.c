@@ -8,6 +8,8 @@
 #include "traps.h"
 #include "spinlock.h"
 
+#define STATUS 14
+
 // Interrupt descriptor table (shared by all CPUs).
 struct gatedesc idt[256];
 extern uint vectors[];  // in vectors.S: array of 256 entry pointers
@@ -77,6 +79,10 @@ trap(struct trapframe *tf)
             cpuid(), tf->cs, tf->eip);
     lapiceoi();
     break;
+  case STATUS:
+      ;
+    int stat = myproc()->tf->eax;
+    exit1(stat);    // Retrieve the stored status in the trapframe and gice it to exit1
 
   //PAGEBREAK: 13
   default:
