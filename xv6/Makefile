@@ -197,6 +197,8 @@ SCRIPTS=\
 	test3.sh\
 	test4.sh\
 	test5.sh\
+	test6.sh\
+	test7.sh\
 
 fs.img: mkfs README $(UPROGS) $(SCRIPTS)
 	./mkfs fs.img README $(UPROGS) $(SCRIPTS)
