@@ -163,6 +163,7 @@ getcmd(char *buf, int nbuf)
 {
   if(script == 0)
     printf(2, "SubShell-$$ ");
+
   memset(buf, 0, nbuf);
   gets(buf, nbuf);
   if(buf[0] == 0) // EOF
@@ -188,15 +189,34 @@ run_script(int fd)
           if(*(file_buf + end) == '\n')     //'\n' means it is a seperate line.
           {
             file_buf[end] = 0;
+
+            // when the subshell is to exited from the script, return an exit value of 3 to the calling process
+            // indicating that 'X' is triggered and that the subshell should be exited.
+            if(file_buf[start] == 'X')
+                exit1(3);  
+            // Handle change directory in the parent process
+            if(file_buf[start] == 'c' && file_buf[start+1] == 'd' && file_buf[start+2] == ' ')
+            {
+                if(chdir(&file_buf[start+3]) < 0)
+                    printf(2, "cannot cd in script: %s\n", file_buf+start+3);
+                start = end+1;
+                end++;
+                continue;
+            }
+
+            // Anything other than "cd", fork and pass the command to parsecmd and runcmd.
             if(fork() == 0)
-              runcmd(parsecmd(&file_buf[start])); //execute command line by lined
-              //printf(2, "%s", &file_buf[start]);
-            wait1(&status);
+            {
+              runcmd(parsecmd(&file_buf[start])); //execute command line by line
+            }
+            else
+              wait1(&status);
+            // Update start of next line
             start = end+1;
           }
           end++;
      }
-  exit1(status);
+     exit();
   return 0;
 }
 
@@ -205,6 +225,7 @@ main(int argc, char *argv[])
 {
   static char buf[100];
   int fd;
+  int status;
 
   if(argc == 2)
     {
@@ -214,9 +235,7 @@ main(int argc, char *argv[])
         printf(2, "Error in opening file");
       run_script(fd);
       close(fd);
-      //script = 0;
     }
-
 
   // Ensure that three file descriptors are open.
   while((fd = open("console", O_RDWR)) >= 0){
@@ -226,25 +245,28 @@ main(int argc, char *argv[])
     }
   }
 
-
-
   // Read and run input commands.
   while(getcmd(buf, sizeof(buf)) >= 0){
-    if(buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' '){
+    if(buf[0] == 'c'){
       // Chdir must be called by the parent, not the child.
       buf[strlen(buf)-1] = 0;  // chop \n
       if(chdir(buf+3) < 0)
         printf(2, "cannot cd %s\n", buf+3);
       continue;
     }
+
     // if X is called the parent process must exit
-    if(buf[0] == 'X'){
+    if(buf[0] == 'c'){
       exit();
     }
 
     if(fork1() == 0)
       runcmd(parsecmd(buf));
-    wait();
+    wait1(&status);
+  // if a status of 3 is recieved, it means that 'X' was triggered from a script file
+  // Hence exit subshell
+    if(status == 3)
+      exit();
   }
   exit();
 }
