@@ -1,6 +1,7 @@
 ## xv6_OS_Shell
 
 > Two new system calls are added  
+
 int exit1(int status);  
 int wait1(int* status);  
 These act like the existing exit and wait syscalls, except passing an exit status from the child back to the waiting parent.  
