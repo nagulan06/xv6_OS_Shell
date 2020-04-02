@@ -20,7 +20,13 @@ $tty->expect($TO, "init: starting sh");
 sleep(1);
 
 # Shell Script to create some directories from the main shell and call sub shell
-$tty->send("sh test6.sh\n");
+$tty->send("mkdir systems \n");
+sleep(1);
+$tty->send("mkdir systems/notes  \n");
+sleep(2);
+$tty->send("/pwd \n");
+sleep(1);
+$tty->send("sub \n");
 $tty->expect($TO, "test complete");
 
 # Script to Change directory (cd) from sub shell, print the current directory path (pwd) and exit
